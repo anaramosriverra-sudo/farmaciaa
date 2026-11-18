@@ -52,6 +52,8 @@
             En Laravel: 
         -->
 
+        @yield('content')
+
       </div>
     </main>
 
