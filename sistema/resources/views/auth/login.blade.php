@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="csrf-token" content="{{ csrf_token() }}">
   <meta name="description" content="San Juan – Sistema de Venta de Medicamentos">
   <title>FARM SJB | Iniciar sesión</title>
   <link rel="stylesheet" href="{{ asset('css/bootstrap.css') }}">
@@ -61,13 +60,13 @@
         <p class="text-secondary small mb-0">Ingresa tus credenciales para continuar.</p>
       </div>
 
-      @if ($errors->any())
+      @if($errors->any())
         <div id="loginAlert" class="alert alert-danger small py-2" role="alert">
           <i class="bi bi-exclamation-circle me-1"></i> {{ $errors->first() }}
         </div>
       @endif
 
-      <form id="loginForm" class="needs-validation" method="POST" action="{{ route('login.store') }}" novalidate>
+      <form id="loginForm" class="needs-validation" method="POST" action="{{ route('login.attempt') }}" novalidate>
         @csrf
 
         <div class="mb-3">
@@ -83,6 +82,7 @@
         <div class="mb-3">
           <div class="d-flex justify-content-between align-items-center">
             <label for="loginPassword" class="form-label small fw-semibold text-dark">Contraseña</label>
+            
           </div>
           <div class="input-group has-validation login-input-group">
             <span class="input-group-text bg-white"><i class="bi bi-lock text-secondary"></i></span>
@@ -96,7 +96,7 @@
         </div>
 
         <div class="form-check mb-4">
-          <input class="form-check-input" type="checkbox" id="rememberMe" name="recordar">
+          <input class="form-check-input" type="checkbox" id="rememberMe" name="remember" value="1">
           <label class="form-check-label small text-secondary" for="rememberMe">Mantener sesión iniciada</label>
         </div>
 

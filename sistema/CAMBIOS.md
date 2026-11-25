@@ -20,3 +20,8 @@ Usuario de ejemplo: admin@sanjuan.com / admin123 (aún no hay pantalla de login)
 - Dashboard: KPIs, gráfico de 7 días, últimas ventas, más vendidos, stock bajo.
 - Sidebar con todos los enlaces y estado activo; campana con alertas reales de stock bajo.
 - Textos de validación en español, `APP_LOCALE=es`, zona horaria America/Lima.
+
+## Login
+- Pantalla de login (`/login`), cierre de sesión con confirmación y todas las rutas protegidas con `auth`.
+- El menú lateral muestra el nombre, correo y rol del usuario que inició sesión.
+- Usuario de ejemplo: admin@sanjuan.com / admin123 (se crea con `php artisan migrate:fresh --seed`; si ya tienes datos, solo crea o edita un usuario desde la pestaña Usuarios).
