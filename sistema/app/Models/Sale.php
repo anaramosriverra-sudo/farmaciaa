@@ -3,18 +3,15 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-<<<<<<< Updated upstream
-
-class Sale extends Model
-{
-    //
-=======
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Sale extends Model
 {
-    protected $fillable = ['user_id', 'customer_id', 'date', 'total', 'igv'];
+    /** Tasa de IGV (Perú). Los precios de los medicamentos ya incluyen IGV. */
+    public const IGV_RATE = 0.18;
+
+    protected $fillable = ['customer_id', 'user_id', 'date', 'total', 'igv'];
 
     protected function casts(): array
     {
@@ -25,24 +22,28 @@ class Sale extends Model
         ];
     }
 
-    public function user(): BelongsTo
-    {
-        return $this->belongsTo(User::class);
-    }
-
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
     }
 
-    public function details(): HasMany
+    public function user(): BelongsTo
     {
-        return $this->hasMany(Detail::class);
+        return $this->belongsTo(User::class);
     }
 
-    public function getCodigoAttribute(): string
+    public function details(): HasMany
     {
-        return 'V-'.str_pad((string) $this->id, 6, '0', STR_PAD_LEFT);
+        return $this->hasMany(DetailSale::class);
     }
->>>>>>> Stashed changes
+
+    public function getCodeAttribute(): string
+    {
+        return 'V-' . str_pad((string) $this->id, 6, '0', STR_PAD_LEFT);
+    }
+
+    public function getSubtotalAttribute(): string
+    {
+        return number_format((float) $this->total - (float) $this->igv, 2, '.', '');
+    }
 }

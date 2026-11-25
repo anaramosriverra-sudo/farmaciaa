@@ -8,63 +8,64 @@ use Illuminate\Validation\Rule;
 
 class CustomerController extends Controller
 {
-    public function index(Request $request)
+    public function index()
     {
-        $q = trim((string) $request->query('q'));
+        $customers = Customer::withCount('sales')->orderBy('name')->get();
 
-        $customers = Customer::withCount('sales')
-            ->when($q !== '', fn ($query) => $query->where(function ($w) use ($q) {
-                $w->where('name', 'like', "%{$q}%")->orWhere('dni', 'like', "%{$q}%");
-            }))
-            ->orderBy('name')
-            ->paginate(10)
-            ->withQueryString();
-
-        return view('customers.index', compact('customers', 'q'));
+        return view('management.customers.index', compact('customers'));
     }
 
     public function create()
     {
-        return view('customers.create', ['customer' => new Customer]);
+        return view('management.customers.create');
     }
 
     public function store(Request $request)
     {
-        Customer::create($this->validated($request));
+        $data = $request->validate([
+            'name' => 'required|string|max:50',
+            'dni' => 'required|digits:8|unique:customers,dni',
+            'phone' => 'nullable|digits:9',
+            'age' => 'nullable|integer|min:0|max:120',
+        ]);
 
-        return redirect()->route('customers.index')->with('success', 'Cliente registrado correctamente.');
+        Customer::create($data);
+
+        return to_route('customers.index')->with('ok', 'Cliente registrado correctamente.');
     }
 
     public function edit(Customer $customer)
     {
-        return view('customers.edit', compact('customer'));
+        return view('management.customers.edit', compact('customer'));
     }
 
     public function update(Request $request, Customer $customer)
     {
-        $customer->update($this->validated($request, $customer));
+        $data = $request->validate([
+            'name' => 'required|string|max:50',
+            'dni' => [
+                'required',
+                'digits:8',
+                Rule::unique('customers', 'dni')->ignore($customer->id),
+            ],
+            'phone' => 'nullable|digits:9',
+            'age' => 'nullable|integer|min:0|max:120',
+        ]);
 
-        return redirect()->route('customers.index')->with('success', 'Cliente actualizado correctamente.');
+        $customer->update($data);
+
+        return to_route('customers.index')->with('ok', 'Cliente actualizado correctamente.');
     }
 
     public function destroy(Customer $customer)
     {
         if ($customer->sales()->exists()) {
-            return back()->with('error', 'No se puede eliminar: el cliente tiene ventas registradas.');
+            return to_route('customers.index')
+                ->with('error', 'No se puede eliminar: el cliente tiene ventas registradas.');
         }
 
         $customer->delete();
 
-        return redirect()->route('customers.index')->with('success', 'Cliente eliminado correctamente.');
-    }
-
-    private function validated(Request $request, ?Customer $customer = null): array
-    {
-        return $request->validate([
-            'name' => ['required', 'string', 'max:100'],
-            'dni' => ['required', 'digits:8', Rule::unique('customers', 'dni')->ignore($customer)],
-            'phone' => ['nullable', 'digits:9'],
-            'age' => ['nullable', 'integer', 'min:0', 'max:120'],
-        ]);
+        return to_route('customers.index')->with('ok', 'Cliente eliminado correctamente.');
     }
 }

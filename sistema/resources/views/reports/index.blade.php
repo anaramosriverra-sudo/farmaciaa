@@ -1,101 +1,93 @@
 @extends('template.administrador')
 
-@section('title', 'Reportes')
+@section('title', 'REPORTES')
 @section('name-section', 'REPORTES')
-@section('descripcion', 'Reporte de ventas del '.$desde->format('d/m/Y').' al '.$hasta->format('d/m/Y'))
+@section('descripcion', 'Reporte de ventas del ' . \Illuminate\Support\Carbon::parse($from)->format('d/m/Y') . ' al ' . \Illuminate\Support\Carbon::parse($to)->format('d/m/Y'))
 @section('module-breadcrumb', 'Principal')
 @section('section-breadcrumb', 'Reportes')
 
+@push('styles')
+<style>
+  @media print {
+    #sidebar, .app-header, .no-print, .sidebar-overlay { display: none !important; }
+    #app-wrapper { height: auto; overflow: visible; }
+    .app-content { overflow: visible !important; }
+  }
+</style>
+@endpush
+
 @section('content')
-<div class="card border-0 shadow-sm mb-3 d-print-none">
+<div class="card border-0 shadow-sm mb-4 no-print">
   <div class="card-body">
-    <form method="GET" class="row g-2 align-items-end">
+    <form action="{{ route('reports.index') }}" method="GET" class="row g-2 align-items-end">
       <div class="col-6 col-md-3">
-        <label for="desde" class="form-label small mb-1">Desde</label>
-        <input type="date" name="desde" id="desde" value="{{ $desde->toDateString() }}" class="form-control form-control-sm @error('desde') is-invalid @enderror">
-        @error('desde') <div class="invalid-feedback">{{ $message }}</div> @enderror
+        <label for="from" class="form-label small mb-1">Desde</label>
+        <input type="date" name="from" id="from" value="{{ old('from', $from) }}"
+               class="form-control @error('from') is-invalid @enderror">
+        @error('from')<div class="invalid-feedback">{{ $message }}</div>@enderror
       </div>
       <div class="col-6 col-md-3">
-        <label for="hasta" class="form-label small mb-1">Hasta</label>
-        <input type="date" name="hasta" id="hasta" value="{{ $hasta->toDateString() }}" class="form-control form-control-sm @error('hasta') is-invalid @enderror">
-        @error('hasta') <div class="invalid-feedback">{{ $message }}</div> @enderror
+        <label for="to" class="form-label small mb-1">Hasta</label>
+        <input type="date" name="to" id="to" value="{{ old('to', $to) }}"
+               class="form-control @error('to') is-invalid @enderror">
+        @error('to')<div class="invalid-feedback">{{ $message }}</div>@enderror
       </div>
       <div class="col-12 col-md-6 d-flex gap-2">
-        <button type="submit" class="btn btn-sm btn-primary text-white"><i class="bi bi-funnel me-1"></i>Filtrar</button>
-        <a href="{{ route('reports.index') }}" class="btn btn-sm btn-light">Este mes</a>
-        <button type="button" class="btn btn-sm btn-outline-secondary ms-auto" onclick="window.print()"><i class="bi bi-printer me-1"></i>Imprimir</button>
+        <button type="submit" class="btn btn-primary text-white"><i class="bi bi-funnel me-1"></i>Filtrar</button>
+        <a href="{{ route('reports.export', ['from' => $from, 'to' => $to]) }}" class="btn btn-outline-success">
+          <i class="bi bi-file-earmark-spreadsheet me-1"></i>Exportar CSV
+        </a>
+        <button type="button" class="btn btn-outline-secondary" onclick="window.print()">
+          <i class="bi bi-printer me-1"></i>Imprimir
+        </button>
       </div>
     </form>
   </div>
 </div>
 
-<div class="row g-3 mb-3">
-  @foreach ([
-    ['Ventas realizadas', $resumen['cantidad'], ''],
-    ['Total vendido', 'S/ '.number_format($resumen['total'], 2), ''],
-    ['IGV (18%)', 'S/ '.number_format($resumen['igv'], 2), ''],
-    ['Venta neta', 'S/ '.number_format($resumen['neto'], 2), ''],
-    ['Ticket promedio', 'S/ '.number_format($resumen['promedio'], 2), ''],
-  ] as [$t, $v])
-    <div class="col-6 col-lg">
-      <div class="card border-0 shadow-sm h-100"><div class="card-body py-3">
-        <div class="text-secondary small text-uppercase">{{ $t }}</div>
-        <div class="fs-5 fw-bold">{{ $v }}</div>
-      </div></div>
-    </div>
-  @endforeach
-</div>
-
-<div class="row g-3 mb-3">
-  <div class="col-12 col-xl-6">
-    <div class="card border-0 shadow-sm h-100">
-      <div class="card-header bg-white fw-semibold small text-uppercase">Ventas por día</div>
-      <div class="table-responsive">
-        <table class="table table-sm mb-0 align-middle">
-          <thead><tr class="small text-uppercase"><th>Fecha</th><th class="text-center">Ventas</th><th class="text-end">Total</th></tr></thead>
-          <tbody>
-            @forelse ($porDia as $d)
-              <tr><td>{{ $d['dia']->format('d/m/Y') }}</td><td class="text-center">{{ $d['cantidad'] }}</td><td class="text-end">S/ {{ number_format($d['total'], 2) }}</td></tr>
-            @empty
-              <tr><td colspan="3" class="text-center text-secondary py-3 small">Sin ventas en el rango seleccionado.</td></tr>
-            @endforelse
-          </tbody>
-        </table>
-      </div>
-    </div>
+<div class="row g-3 mb-4">
+  <div class="col-6 col-xl-3">
+    <div class="card border-0 shadow-sm h-100"><div class="card-body">
+      <div class="text-secondary small text-uppercase">Ventas</div>
+      <div class="fs-4 fw-bold">{{ $summary['count'] }}</div>
+    </div></div>
   </div>
-
-  <div class="col-12 col-xl-6">
-    <div class="card border-0 shadow-sm h-100">
-      <div class="card-header bg-white fw-semibold small text-uppercase">Medicamentos más vendidos</div>
-      <div class="table-responsive">
-        <table class="table table-sm mb-0 align-middle">
-          <thead><tr class="small text-uppercase"><th>Medicamento</th><th class="text-center">Unidades</th><th class="text-end">Monto</th></tr></thead>
-          <tbody>
-            @forelse ($topMedicamentos as $m)
-              <tr><td>{{ $m->name }}</td><td class="text-center">{{ $m->cantidad }}</td><td class="text-end">S/ {{ number_format($m->monto, 2) }}</td></tr>
-            @empty
-              <tr><td colspan="3" class="text-center text-secondary py-3 small">Sin datos.</td></tr>
-            @endforelse
-          </tbody>
-        </table>
-      </div>
-    </div>
+  <div class="col-6 col-xl-3">
+    <div class="card border-0 shadow-sm h-100"><div class="card-body">
+      <div class="text-secondary small text-uppercase">Total vendido</div>
+      <div class="fs-4 fw-bold">S/ {{ number_format($summary['total'], 2) }}</div>
+    </div></div>
+  </div>
+  <div class="col-6 col-xl-3">
+    <div class="card border-0 shadow-sm h-100"><div class="card-body">
+      <div class="text-secondary small text-uppercase">IGV</div>
+      <div class="fs-4 fw-bold">S/ {{ number_format($summary['igv'], 2) }}</div>
+    </div></div>
+  </div>
+  <div class="col-6 col-xl-3">
+    <div class="card border-0 shadow-sm h-100"><div class="card-body">
+      <div class="text-secondary small text-uppercase">Ticket promedio</div>
+      <div class="fs-4 fw-bold">S/ {{ number_format($summary['average'], 2) }}</div>
+    </div></div>
   </div>
 </div>
 
-<div class="row g-3 mb-3">
-  <div class="col-12 col-xl-6">
+<div class="row g-3 mb-4">
+  <div class="col-12 col-lg-4">
     <div class="card border-0 shadow-sm h-100">
-      <div class="card-header bg-white fw-semibold small text-uppercase">Ventas por categoría</div>
+      <div class="card-header bg-white fw-semibold">Ventas por día</div>
       <div class="table-responsive">
-        <table class="table table-sm mb-0 align-middle">
-          <thead><tr class="small text-uppercase"><th>Categoría</th><th class="text-center">Unidades</th><th class="text-end">Monto</th></tr></thead>
+        <table class="table table-sm mb-0">
+          <thead><tr><th class="small text-uppercase">Día</th><th class="small text-uppercase text-center">Ventas</th><th class="small text-uppercase text-end">Total</th></tr></thead>
           <tbody>
-            @forelse ($porCategoria as $c)
-              <tr><td>{{ $c->nombre }}</td><td class="text-center">{{ $c->cantidad }}</td><td class="text-end">S/ {{ number_format($c->monto, 2) }}</td></tr>
+            @forelse($perDay as $row)
+              <tr>
+                <td>{{ $row['day'] }}</td>
+                <td class="text-center">{{ $row['count'] }}</td>
+                <td class="text-end">S/ {{ number_format($row['total'], 2) }}</td>
+              </tr>
             @empty
-              <tr><td colspan="3" class="text-center text-secondary py-3 small">Sin datos.</td></tr>
+              <tr><td colspan="3" class="text-center text-secondary py-3">Sin datos en el rango.</td></tr>
             @endforelse
           </tbody>
         </table>
@@ -103,45 +95,106 @@
     </div>
   </div>
 
-  <div class="col-12 col-xl-6">
+  <div class="col-12 col-lg-4">
     <div class="card border-0 shadow-sm h-100">
-      <div class="card-header bg-white fw-semibold small text-uppercase">Ventas por vendedor</div>
+      <div class="card-header bg-white fw-semibold">Medicamentos más vendidos</div>
       <div class="table-responsive">
-        <table class="table table-sm mb-0 align-middle">
-          <thead><tr class="small text-uppercase"><th>Vendedor</th><th class="text-center">Ventas</th><th class="text-end">Monto</th></tr></thead>
+        <table class="table table-sm mb-0">
+          <thead><tr><th class="small text-uppercase">Medicamento</th><th class="small text-uppercase text-center">Unid.</th><th class="small text-uppercase text-end">Total</th></tr></thead>
           <tbody>
-            @forelse ($porVendedor as $v)
-              <tr><td>{{ $v->name }}</td><td class="text-center">{{ $v->cantidad }}</td><td class="text-end">S/ {{ number_format($v->monto, 2) }}</td></tr>
+            @forelse($byMedicine as $row)
+              <tr>
+                <td>{{ $row->name }}</td>
+                <td class="text-center">{{ $row->qty }}</td>
+                <td class="text-end">S/ {{ number_format($row->total, 2) }}</td>
+              </tr>
             @empty
-              <tr><td colspan="3" class="text-center text-secondary py-3 small">Sin datos.</td></tr>
+              <tr><td colspan="3" class="text-center text-secondary py-3">Sin datos en el rango.</td></tr>
             @endforelse
           </tbody>
         </table>
       </div>
     </div>
+  </div>
+
+  <div class="col-12 col-lg-4">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-white fw-semibold">Ventas por categoría</div>
+      <div class="table-responsive">
+        <table class="table table-sm mb-0">
+          <thead><tr><th class="small text-uppercase">Categoría</th><th class="small text-uppercase text-center">Unid.</th><th class="small text-uppercase text-end">Total</th></tr></thead>
+          <tbody>
+            @forelse($byCategory as $row)
+              <tr>
+                <td>{{ $row->name }}</td>
+                <td class="text-center">{{ $row->qty }}</td>
+                <td class="text-end">S/ {{ number_format($row->total, 2) }}</td>
+              </tr>
+            @empty
+              <tr><td colspan="3" class="text-center text-secondary py-3">Sin datos en el rango.</td></tr>
+            @endforelse
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-header bg-white fw-semibold">Detalle de ventas</div>
+  <div class="table-responsive">
+    <table class="table table-sm table-hover align-middle mb-0">
+      <thead>
+        <tr>
+          <th class="small text-uppercase">Código</th>
+          <th class="small text-uppercase">Fecha</th>
+          <th class="small text-uppercase">Cliente</th>
+          <th class="small text-uppercase">Vendedor</th>
+          <th class="small text-uppercase text-end">IGV</th>
+          <th class="small text-uppercase text-end">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        @forelse($sales as $sale)
+          <tr>
+            <td><a href="{{ route('sales.show', $sale) }}" class="text-decoration-none">{{ $sale->code }}</a></td>
+            <td>{{ $sale->date->format('d/m/Y H:i') }}</td>
+            <td>{{ $sale->customer->name ?? '—' }}</td>
+            <td>{{ $sale->user->name ?? '—' }}</td>
+            <td class="text-end">S/ {{ number_format($sale->igv, 2) }}</td>
+            <td class="text-end">S/ {{ number_format($sale->total, 2) }}</td>
+          </tr>
+        @empty
+          <tr><td colspan="6" class="text-center text-secondary py-3">No hay ventas en el rango seleccionado.</td></tr>
+        @endforelse
+      </tbody>
+    </table>
   </div>
 </div>
 
 <div class="card border-0 shadow-sm">
-  <div class="card-header bg-white fw-semibold small text-uppercase">Estado del inventario (actual)</div>
-  <div class="card-body">
-    <div class="row g-3 mb-3">
-      <div class="col-4"><div class="text-secondary small">Productos</div><div class="fw-bold">{{ $inventario['productos'] }}</div></div>
-      <div class="col-4"><div class="text-secondary small">Unidades en stock</div><div class="fw-bold">{{ number_format($inventario['unidades']) }}</div></div>
-      <div class="col-4"><div class="text-secondary small">Valor del inventario</div><div class="fw-bold">S/ {{ number_format($inventario['valor'], 2) }}</div></div>
-    </div>
-    <div class="table-responsive">
-      <table class="table table-sm mb-0 align-middle">
-        <thead><tr class="small text-uppercase"><th>Stock bajo (≤ {{ \App\Models\Medicamento::STOCK_BAJO }})</th><th>Categoría</th><th class="text-center">Stock</th></tr></thead>
-        <tbody>
-          @forelse ($inventario['stock_bajo'] as $m)
-            <tr><td>{{ $m->name }}</td><td>{{ $m->category?->nombre }}</td><td class="text-center"><span class="badge {{ $m->stock === 0 ? 'bg-danger' : 'bg-warning text-dark' }}">{{ $m->stock }}</span></td></tr>
-          @empty
-            <tr><td colspan="3" class="text-center text-secondary py-3 small">No hay productos con stock bajo.</td></tr>
-          @endforelse
-        </tbody>
-      </table>
-    </div>
+  <div class="card-header bg-white fw-semibold">Medicamentos con stock bajo (≤ {{ \App\Models\Medicine::LOW_STOCK }} unidades)</div>
+  <div class="table-responsive">
+    <table class="table table-sm align-middle mb-0">
+      <thead>
+        <tr>
+          <th class="small text-uppercase">Medicamento</th>
+          <th class="small text-uppercase">Categoría</th>
+          <th class="small text-uppercase text-center">Stock</th>
+        </tr>
+      </thead>
+      <tbody>
+        @forelse($lowStock as $medicine)
+          <tr>
+            <td>{{ $medicine->name }}</td>
+            <td>{{ $medicine->category->nombre ?? '—' }}</td>
+            <td class="text-center"><span class="badge bg-danger-subtle text-danger rounded-pill">{{ $medicine->stock }}</span></td>
+          </tr>
+        @empty
+          <tr><td colspan="3" class="text-center text-secondary py-3">Todo el inventario tiene stock suficiente.</td></tr>
+        @endforelse
+      </tbody>
+    </table>
   </div>
 </div>
 @endsection

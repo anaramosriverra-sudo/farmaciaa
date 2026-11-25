@@ -2,52 +2,27 @@
 
 namespace App\Providers;
 
-<<<<<<< Updated upstream
-=======
-use App\Models\Medicamento;
-use Illuminate\Pagination\Paginator;
-use Illuminate\Support\Facades\Schema;
+use App\Models\Medicine;
 use Illuminate\Support\Facades\View;
->>>>>>> Stashed changes
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
-<<<<<<< Updated upstream
-    /**
-     * Register any application services.
-     */
-=======
->>>>>>> Stashed changes
     public function register(): void
     {
         //
     }
 
-<<<<<<< Updated upstream
-    /**
-     * Bootstrap any application services.
-     */
     public function boot(): void
     {
-        //
-=======
-    public function boot(): void
-    {
-        Paginator::useBootstrapFive();
-
-        // Notificaciones de stock bajo en la cabecera (campana)
+        // Alertas de stock bajo para la campana del encabezado
         View::composer('partials.header', function ($view) {
-            $alertas = collect();
-            $total = 0;
+            $low = Medicine::where('stock', '<=', Medicine::LOW_STOCK);
 
-            if (Schema::hasTable('medicamentos')) {
-                $total = Medicamento::stockBajo()->count();
-                $alertas = Medicamento::stockBajo()->orderBy('stock')->limit(5)->get();
-            }
-
-            $view->with('alertasStock', $alertas)->with('totalAlertasStock', $total);
+            $view->with([
+                'lowStockCount' => (clone $low)->count(),
+                'lowStockAlerts' => (clone $low)->orderBy('stock')->orderBy('name')->limit(5)->get(),
+            ]);
         });
->>>>>>> Stashed changes
     }
 }

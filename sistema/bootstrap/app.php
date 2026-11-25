@@ -12,13 +12,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-<<<<<<< Updated upstream
         //
-=======
-        $middleware->alias([
-            'admin' => \App\Http\Middleware\AdminOnly::class,
-        ]);
->>>>>>> Stashed changes
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

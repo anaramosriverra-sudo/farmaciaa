@@ -9,84 +9,73 @@ use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
-    public function index(Request $request)
+    public function index()
     {
-        $q = trim((string) $request->query('q'));
+        $users = User::with('role')->orderBy('name')->get();
 
-        $users = User::with('role')
-            ->when($q !== '', fn ($query) => $query->where(function ($w) use ($q) {
-                $w->where('name', 'like', "%{$q}%")
-                    ->orWhere('email', 'like', "%{$q}%")
-                    ->orWhere('dni', 'like', "%{$q}%");
-            }))
-            ->orderBy('name')
-            ->paginate(10)
-            ->withQueryString();
-
-        return view('settings.users.index', compact('users', 'q'));
+        return view('settings.users.index', compact('users'));
     }
 
     public function create()
     {
-        return view('settings.users.create', [
-            'user' => new User,
-            'roles' => Role::orderBy('name')->get(),
-        ]);
+        $roles = Role::orderBy('nombre')->get();
+
+        return view('settings.users.create', compact('roles'));
     }
 
     public function store(Request $request)
     {
-        User::create($this->validated($request));
+        $data = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|max:255|unique:users,email',
+            'password' => 'required|string|min:6',
+            'role_id' => 'nullable|exists:roles,id',
+        ]);
 
-        return redirect()->route('users.index')->with('success', 'Usuario registrado correctamente.');
+        User::create($data);
+
+        return to_route('users.index')->with('ok', 'Usuario registrado correctamente.');
     }
 
     public function edit(User $user)
     {
-        return view('settings.users.edit', [
-            'user' => $user,
-            'roles' => Role::orderBy('name')->get(),
-        ]);
+        $roles = Role::orderBy('nombre')->get();
+
+        return view('settings.users.edit', compact('user', 'roles'));
     }
 
     public function update(Request $request, User $user)
     {
-        $data = $this->validated($request, $user);
+        $data = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => [
+                'required',
+                'email',
+                'max:255',
+                Rule::unique('users', 'email')->ignore($user->id),
+            ],
+            'password' => 'nullable|string|min:6',
+            'role_id' => 'nullable|exists:roles,id',
+        ]);
 
-        if (blank($data['password'] ?? null)) {
+        if (empty($data['password'])) {
             unset($data['password']);
         }
 
         $user->update($data);
 
-        return redirect()->route('users.index')->with('success', 'Usuario actualizado correctamente.');
+        return to_route('users.index')->with('ok', 'Usuario actualizado correctamente.');
     }
 
-    public function destroy(Request $request, User $user)
+    public function destroy(User $user)
     {
-        if ($user->is($request->user())) {
-            return back()->with('error', 'No puedes eliminar tu propio usuario.');
-        }
-
-        if ($user->sales()->exists()) {
-            return back()->with('error', 'No se puede eliminar: el usuario tiene ventas registradas.');
+        if (\App\Models\Sale::where('user_id', $user->id)->exists()) {
+            return to_route('users.index')
+                ->with('error', 'No se puede eliminar: el usuario tiene ventas registradas.');
         }
 
         $user->delete();
 
-        return redirect()->route('users.index')->with('success', 'Usuario eliminado correctamente.');
-    }
-
-    private function validated(Request $request, ?User $user = null): array
-    {
-        return $request->validate([
-            'role_id' => ['required', 'exists:roles,id'],
-            'name' => ['required', 'string', 'max:255'],
-            'dni' => ['required', 'digits:8', Rule::unique('users', 'dni')->ignore($user)],
-            'phone' => ['nullable', 'string', 'max:15'],
-            'tuition' => ['nullable', 'string', 'max:20'],
-            'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user)],
-            'password' => [$user ? 'nullable' : 'required', 'string', 'min:8', 'confirmed'],
-        ]);
+        return to_route('users.index')->with('ok', 'Usuario eliminado correctamente.');
     }
 }

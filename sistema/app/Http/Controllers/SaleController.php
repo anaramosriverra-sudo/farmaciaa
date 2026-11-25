@@ -3,143 +3,126 @@
 namespace App\Http\Controllers;
 
 use App\Models\Customer;
-use App\Models\Medicamento;
+use App\Models\DetailSale;
+use App\Models\Medicine;
 use App\Models\Sale;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class SaleController extends Controller
 {
-    public const IGV = 0.18;
-
-    public function index(Request $request)
+    public function index()
     {
-        $q = trim((string) $request->query('q'));
-        $desde = $request->query('desde');
-        $hasta = $request->query('hasta');
+        $sales = Sale::with(['customer', 'user'])->orderByDesc('date')->orderByDesc('id')->get();
 
-        $sales = Sale::with(['user', 'customer'])
-            ->withCount('details')
-            ->when($q !== '', function ($query) use ($q) {
-                $query->where(function ($w) use ($q) {
-                    $w->whereHas('customer', fn ($c) => $c->where('name', 'like', "%{$q}%")->orWhere('dni', 'like', "%{$q}%"))
-                        ->orWhereHas('user', fn ($u) => $u->where('name', 'like', "%{$q}%"));
-                    if (ctype_digit(ltrim($q, 'Vv-0')) && ltrim($q, 'Vv-0') !== '') {
-                        $w->orWhere('id', (int) ltrim($q, 'Vv-0'));
-                    }
-                });
-            })
-            ->when($desde, fn ($query) => $query->whereDate('date', '>=', $desde))
-            ->when($hasta, fn ($query) => $query->whereDate('date', '<=', $hasta))
-            ->orderByDesc('date')->orderByDesc('id')
-            ->paginate(10)
-            ->withQueryString();
-
-        return view('sales.index', compact('sales', 'q', 'desde', 'hasta'));
+        return view('management.sales.index', compact('sales'));
     }
 
     public function create()
     {
-        $medicamentos = Medicamento::with('category')
-            ->where('stock', '>', 0)
-            ->orderBy('name')
-            ->get()
-            ->map(fn ($m) => [
-                'id' => $m->id,
-                'name' => $m->name,
-                'category' => $m->category?->nombre,
-                'price' => (float) $m->price,
-                'stock' => $m->stock,
-            ]);
+        $customers = Customer::orderBy('name')->get();
+        $medicines = Medicine::where('stock', '>', 0)->orderBy('name')->get();
 
-        return view('sales.create', [
-            'medicamentos' => $medicamentos,
-            'customers' => Customer::orderBy('name')->get(),
-        ]);
+        return view('management.sales.create', compact('customers', 'medicines'));
     }
 
     public function store(Request $request)
     {
         $request->validate([
-            'customer_id' => ['nullable', 'exists:customers,id'],
-            'items' => ['required', 'array', 'min:1'],
-            'items.*.medicine_id' => ['required', 'exists:medicamentos,id'],
-            'items.*.amount' => ['required', 'integer', 'min:1', 'max:10000'],
-        ], [
-            'items.required' => 'Debes agregar al menos un medicamento a la venta.',
-            'items.min' => 'Debes agregar al menos un medicamento a la venta.',
+            'customer_id' => 'required|exists:customers,id',
+            'items' => 'required|array|min:1',
+            'items.*.medicine_id' => 'required|distinct|exists:medicines,id',
+            'items.*.amount' => 'required|integer|min:1',
         ]);
 
-        // Unificar medicamentos repetidos
-        $items = collect($request->input('items'))
-            ->groupBy('medicine_id')
-            ->map(fn ($rows) => $rows->sum('amount'));
+        $userId = Auth::id() ?? User::orderBy('id')->value('id');
 
-        $sale = DB::transaction(function () use ($request, $items) {
-            $medicamentos = Medicamento::whereIn('id', $items->keys())->lockForUpdate()->get()->keyBy('id');
+        if (! $userId) {
+            return back()->withInput()->with('error', 'No hay usuarios registrados para asignar la venta.');
+        }
 
-            $total = 0;
+        $items = $request->input('items');
+
+        $sale = DB::transaction(function () use ($request, $items, $userId) {
+            $ids = collect($items)->pluck('medicine_id')->all();
+            $medicines = Medicine::whereIn('id', $ids)->lockForUpdate()->get()->keyBy('id');
+
             $lines = [];
+            $total = 0.0;
 
-            foreach ($items as $id => $amount) {
-                $med = $medicamentos[$id];
+            foreach ($items as $index => $item) {
+                $medicine = $medicines[$item['medicine_id']];
+                $amount = (int) $item['amount'];
 
-                if ($med->stock < $amount) {
+                if ($medicine->stock < $amount) {
                     throw ValidationException::withMessages([
-                        'items' => "Stock insuficiente de {$med->name}: disponible {$med->stock}, solicitado {$amount}.",
+                        "items.$index.amount" => "Stock insuficiente de {$medicine->name} (disponible: {$medicine->stock}).",
                     ]);
                 }
 
-                $subtotal = round($med->price * $amount, 2);
+                $price = (float) $medicine->price;
+                $subtotal = round($price * $amount, 2);
                 $total += $subtotal;
+
                 $lines[] = [
-                    'medicine_id' => $id,
+                    'medicine' => $medicine,
                     'amount' => $amount,
-                    'unit_price' => $med->price,
+                    'price_unit' => $price,
                     'subtotal' => $subtotal,
                 ];
-                $med->decrement('stock', $amount);
             }
 
             $total = round($total, 2);
-            $igv = round($total - ($total / (1 + self::IGV)), 2);
+            $igv = round($total - ($total / (1 + Sale::IGV_RATE)), 2);
 
             $sale = Sale::create([
-                'user_id' => $request->user()->id,
                 'customer_id' => $request->input('customer_id'),
+                'user_id' => $userId,
                 'date' => now(),
                 'total' => $total,
                 'igv' => $igv,
             ]);
 
-            $sale->details()->createMany($lines);
+            foreach ($lines as $line) {
+                DetailSale::create([
+                    'sale_id' => $sale->id,
+                    'medicine_id' => $line['medicine']->id,
+                    'amount' => $line['amount'],
+                    'price_unit' => $line['price_unit'],
+                    'subtotal' => $line['subtotal'],
+                ]);
+
+                $line['medicine']->decrement('stock', $line['amount']);
+            }
 
             return $sale;
         });
 
-        return redirect()->route('sales.show', $sale)->with('success', 'Venta registrada correctamente.');
+        return to_route('sales.show', $sale)->with('ok', 'Venta registrada correctamente.');
     }
 
     public function show(Sale $sale)
     {
-        $sale->load(['user', 'customer', 'details.medicamento']);
+        $sale->load(['customer', 'user', 'details.medicine']);
 
-        return view('sales.show', compact('sale'));
+        return view('management.sales.show', compact('sale'));
     }
 
-    /** Anular venta: devuelve el stock y elimina el registro. */
-    public function destroy(Request $request, Sale $sale)
+    /** Anula la venta: devuelve el stock y elimina el registro. */
+    public function destroy(Sale $sale)
     {
-        abort_unless($request->user()->isAdmin(), 403, 'Solo el Administrador puede anular ventas.');
-
         DB::transaction(function () use ($sale) {
-            foreach ($sale->details as $detail) {
-                Medicamento::whereKey($detail->medicine_id)->increment('stock', $detail->amount);
+            foreach ($sale->details()->get() as $detail) {
+                Medicine::whereKey($detail->medicine_id)->increment('stock', $detail->amount);
             }
-            $sale->delete(); // los detalles se eliminan en cascada
+
+            $sale->details()->delete();
+            $sale->delete();
         });
 
-        return redirect()->route('sales.index')->with('success', 'Venta anulada. El stock fue devuelto al inventario.');
+        return to_route('sales.index')->with('ok', 'Venta anulada. El stock fue devuelto al inventario.');
     }
 }

@@ -2,72 +2,66 @@
 
 namespace App\Http\Controllers;
 
-<<<<<<< Updated upstream
-use Illuminate\Http\Request;
-=======
 use App\Models\Customer;
-use App\Models\Medicamento;
+use App\Models\DetailSale;
+use App\Models\Medicine;
 use App\Models\Sale;
-use Illuminate\Support\Facades\DB;
->>>>>>> Stashed changes
 
 class DashboardController extends Controller
 {
     public function index()
     {
-<<<<<<< Updated upstream
+        $today = now()->toDateString();
+        $monthStart = now()->startOfMonth();
+        $monthEnd = now()->endOfMonth();
 
-        return view('principal.dashboard.index');
+        $salesToday = Sale::whereDate('date', $today);
+        $salesMonth = Sale::whereBetween('date', [$monthStart, $monthEnd]);
 
-    }
-}
-=======
-        $hoy = now()->startOfDay();
-        $mes = now()->startOfMonth();
-
-        $ventasHoy = Sale::where('date', '>=', $hoy);
-        $ventasMes = Sale::where('date', '>=', $mes);
-
-        $stats = [
-            'ventas_hoy_cant' => (clone $ventasHoy)->count(),
-            'ventas_hoy_total' => (float) (clone $ventasHoy)->sum('total'),
-            'ventas_mes_total' => (float) (clone $ventasMes)->sum('total'),
-            'ventas_mes_cant' => (clone $ventasMes)->count(),
-            'medicamentos' => Medicamento::count(),
-            'stock_bajo' => Medicamento::stockBajo()->count(),
-            'clientes' => Customer::count(),
+        $kpis = [
+            'today_total' => (float) (clone $salesToday)->sum('total'),
+            'today_count' => (clone $salesToday)->count(),
+            'month_total' => (float) (clone $salesMonth)->sum('total'),
+            'month_count' => (clone $salesMonth)->count(),
+            'medicines' => Medicine::count(),
+            'low_stock' => Medicine::where('stock', '<=', Medicine::LOW_STOCK)->count(),
+            'customers' => Customer::count(),
         ];
 
-        // Ventas de los últimos 7 días
-        $inicio = now()->subDays(6)->startOfDay();
-        $porDia = Sale::where('date', '>=', $inicio)->get()
-            ->groupBy(fn ($s) => $s->date->format('Y-m-d'))
-            ->map(fn ($g) => (float) $g->sum('total'));
+        // Ventas de los últimos 7 días (con ceros en los días sin ventas)
+        $from = now()->subDays(6)->startOfDay();
+        $perDay = Sale::where('date', '>=', $from)
+            ->get(['date', 'total'])
+            ->groupBy(fn ($sale) => $sale->date->toDateString())
+            ->map(fn ($group) => (float) $group->sum('total'));
 
-        $semana = collect(range(6, 0))->map(function ($i) use ($porDia) {
-            $f = now()->subDays($i);
-
-            return [
-                'label' => ucfirst($f->translatedFormat('D d')),
-                'total' => $porDia[$f->format('Y-m-d')] ?? 0,
+        $chart = [];
+        for ($i = 6; $i >= 0; $i--) {
+            $day = now()->subDays($i);
+            $chart[] = [
+                'label' => $day->format('d/m'),
+                'total' => $perDay->get($day->toDateString(), 0.0),
             ];
-        });
-        $maxSemana = max(1, $semana->max('total'));
+        }
+        $chartMax = max(1, collect($chart)->max('total'));
 
-        $ultimasVentas = Sale::with(['customer', 'user'])->orderByDesc('date')->orderByDesc('id')->limit(5)->get();
-        $stockBajo = Medicamento::with('category')->stockBajo()->orderBy('stock')->limit(5)->get();
+        $latestSales = Sale::with('customer')->orderByDesc('date')->orderByDesc('id')->limit(5)->get();
 
-        $topMedicamentos = DB::table('details')
-            ->join('sales', 'sales.id', '=', 'details.sale_id')
-            ->join('medicamentos', 'medicamentos.id', '=', 'details.medicine_id')
-            ->where('sales.date', '>=', $mes)
-            ->groupBy('medicamentos.id', 'medicamentos.name')
-            ->select('medicamentos.name', DB::raw('SUM(details.amount) as cantidad'))
-            ->orderByDesc('cantidad')
+        $lowStock = Medicine::where('stock', '<=', Medicine::LOW_STOCK)
+            ->orderBy('stock')->orderBy('name')->limit(6)->get();
+
+        $topMedicines = DetailSale::query()
+            ->join('sales', 'sales.id', '=', 'detail_sales.sale_id')
+            ->join('medicines', 'medicines.id', '=', 'detail_sales.medicine_id')
+            ->whereBetween('sales.date', [$monthStart, $monthEnd])
+            ->selectRaw('medicines.name as name, SUM(detail_sales.amount) as qty')
+            ->groupBy('medicines.id', 'medicines.name')
+            ->orderByDesc('qty')
             ->limit(5)
             ->get();
 
-        return view('dashboard', compact('stats', 'semana', 'maxSemana', 'ultimasVentas', 'stockBajo', 'topMedicamentos'));
+        return view('principal.dashboard.index', compact(
+            'kpis', 'chart', 'chartMax', 'latestSales', 'lowStock', 'topMedicines'
+        ));
     }
 }
->>>>>>> Stashed changes

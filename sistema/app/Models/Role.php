@@ -3,21 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-<<<<<<< Updated upstream
 
 class Role extends Model
 {
-    //
-=======
-use Illuminate\Database\Eloquent\Relations\HasMany;
+    protected $fillable = ['nombre', 'descripcion'];
 
-class Role extends Model
-{
-    protected $fillable = ['name', 'description'];
-
-    public function users(): HasMany
+    public function users()
     {
         return $this->hasMany(User::class);
     }
->>>>>>> Stashed changes
 }

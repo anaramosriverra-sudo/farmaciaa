@@ -2,123 +2,118 @@
 
 namespace Database\Seeders;
 
-<<<<<<< Updated upstream
-use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-=======
 use App\Models\Category;
 use App\Models\Customer;
-use App\Models\Medicamento;
+use App\Models\DetailSale;
+use App\Models\Medicine;
 use App\Models\Role;
 use App\Models\Sale;
 use App\Models\User;
->>>>>>> Stashed changes
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
 {
-<<<<<<< Updated upstream
-    use WithoutModelEvents;
-
-    /**
-     * Seed the application's database.
-     */
-    public function run(): void
-    {
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
-=======
     public function run(): void
     {
         // Roles
-        $admin = Role::firstOrCreate(['name' => 'Administrador'], ['description' => 'Acceso total al sistema']);
-        $vendedor = Role::firstOrCreate(['name' => 'Vendedor'], ['description' => 'Registra ventas y consulta inventario']);
+        $admin = Role::firstOrCreate(['nombre' => 'Administrador'], ['descripcion' => 'Acceso total al sistema']);
+        Role::firstOrCreate(['nombre' => 'Farmacéutico'], ['descripcion' => 'Gestión de inventario y ventas']);
+        Role::firstOrCreate(['nombre' => 'Vendedor'], ['descripcion' => 'Registro de ventas']);
 
-        // Usuarios (contraseña de ambos: password)
-        User::updateOrCreate(['email' => 'admin@sanjuan.com'], [
-            'role_id' => $admin->id,
-            'name' => 'Administrador',
-            'dni' => '70000001',
-            'phone' => '987654321',
-            'password' => 'password',
-        ]);
-        $user = User::updateOrCreate(['email' => 'vendedor@sanjuan.com'], [
-            'role_id' => $vendedor->id,
-            'name' => 'Vendedor Demo',
-            'dni' => '70000002',
-            'phone' => '987654322',
-            'password' => 'password',
-        ]);
+        // Usuario administrador (contraseña: admin123)
+        $user = User::firstOrCreate(
+            ['email' => 'admin@sanjuan.com'],
+            ['name' => 'Administrador', 'password' => 'admin123', 'role_id' => $admin->id]
+        );
 
         // Categorías
-        $cats = collect([
+        $categories = [];
+        foreach ([
             'Analgésicos' => 'Alivio del dolor y la fiebre',
             'Antibióticos' => 'Tratamiento de infecciones bacterianas',
-            'Antiinflamatorios' => 'Reducen la inflamación',
-            'Vitaminas' => 'Suplementos vitamínicos y minerales',
+            'Antiinflamatorios' => 'Reducción de inflamación',
             'Antialérgicos' => 'Tratamiento de alergias',
-        ])->map(fn ($d, $n) => Category::firstOrCreate(['nombre' => $n], ['descripcion' => $d]));
+            'Vitaminas' => 'Suplementos y vitaminas',
+        ] as $nombre => $descripcion) {
+            $categories[$nombre] = Category::firstOrCreate(['nombre' => $nombre], ['descripcion' => $descripcion]);
+        }
 
         // Medicamentos
-        $meds = [
-            ['Paracetamol 500 mg', 'Analgésicos', 0.50, 200],
-            ['Ibuprofeno 400 mg', 'Antiinflamatorios', 1.20, 8],
-            ['Amoxicilina 500 mg', 'Antibióticos', 1.80, 5],
-            ['Naproxeno 550 mg', 'Antiinflamatorios', 1.50, 60],
-            ['Vitamina C 1 g', 'Vitaminas', 2.00, 120],
-            ['Loratadina 10 mg', 'Antialérgicos', 0.90, 90],
-            ['Azitromicina 500 mg', 'Antibióticos', 6.50, 40],
-            ['Diclofenaco 50 mg', 'Antiinflamatorios', 0.80, 150],
-        ];
-        foreach ($meds as [$name, $cat, $price, $stock]) {
-            Medicamento::firstOrCreate(['name' => $name], [
-                'category_id' => $cats[$cat]->id,
-                'price' => $price,
-                'stock' => $stock,
-            ]);
+        $medicines = [];
+        foreach ([
+            ['Paracetamol 500mg', 'Analgésicos', 0.50, 200],
+            ['Panadol Forte', 'Analgésicos', 1.20, 120],
+            ['Amoxicilina 500mg', 'Antibióticos', 1.50, 5],
+            ['Azitromicina 500mg', 'Antibióticos', 6.00, 40],
+            ['Ibuprofeno 400mg', 'Antiinflamatorios', 0.80, 8],
+            ['Naproxeno 550mg', 'Antiinflamatorios', 1.30, 60],
+            ['Loratadina 10mg', 'Antialérgicos', 0.70, 90],
+            ['Cetirizina 10mg', 'Antialérgicos', 0.90, 70],
+            ['Vitamina C 1g', 'Vitaminas', 1.00, 150],
+            ['Complejo B', 'Vitaminas', 1.80, 9],
+        ] as [$name, $category, $price, $stock]) {
+            $medicines[] = Medicine::firstOrCreate(
+                ['name' => $name],
+                ['category_id' => $categories[$category]->id, 'price' => $price, 'stock' => $stock]
+            );
         }
 
         // Clientes
+        $customers = [];
         foreach ([
-            ['Juan Pérez Quispe', '45678912', '987111222', 34],
-            ['María Torres Huamán', '41236598', '987333444', 28],
-            ['Luis Ramos Condori', '47891234', null, 52],
+            ['Juan Pérez Quispe', '45871236', '987654321', 34],
+            ['María López Rojas', '41236587', '912345678', 52],
+            ['Carlos Ramos Huamán', '70123456', null, 27],
         ] as [$name, $dni, $phone, $age]) {
-            Customer::firstOrCreate(['dni' => $dni], compact('name', 'phone', 'age'));
+            $customers[] = Customer::firstOrCreate(
+                ['dni' => $dni],
+                ['name' => $name, 'phone' => $phone, 'age' => $age]
+            );
         }
 
-        // Ventas de ejemplo (solo si no hay ninguna)
+        // Ventas de ejemplo (solo si aún no hay ninguna)
         if (Sale::count() === 0) {
-            $clientes = Customer::all();
-            $catalogo = Medicamento::where('stock', '>', 20)->get();
+            $samples = [
+                [0, 0, [[0, 4], [6, 2]]],
+                [1, 0, [[1, 3]]],
+                [2, 1, [[3, 1], [8, 2]]],
+                [3, 1, [[5, 2], [7, 3]]],
+                [4, 2, [[0, 10], [8, 5]]],
+                [5, 2, [[1, 2]]],
+                [6, 0, [[3, 2], [6, 1]]],
+            ];
 
-            foreach (range(0, 5) as $i) {
-                $items = $catalogo->random(2)->map(fn ($m) => ['m' => $m, 'q' => rand(1, 4)]);
-                $total = round($items->sum(fn ($r) => $r['m']->price * $r['q']), 2);
+            foreach ($samples as [$daysAgo, $customerIndex, $lines]) {
+                $total = 0;
+                $rows = [];
+
+                foreach ($lines as [$medicineIndex, $amount]) {
+                    $medicine = $medicines[$medicineIndex];
+                    $subtotal = round((float) $medicine->price * $amount, 2);
+                    $total += $subtotal;
+                    $rows[] = [$medicine, $amount, (float) $medicine->price, $subtotal];
+                }
+
+                $total = round($total, 2);
 
                 $sale = Sale::create([
+                    'customer_id' => $customers[$customerIndex]->id,
                     'user_id' => $user->id,
-                    'customer_id' => $clientes->random()->id,
-                    'date' => now()->subDays($i)->setTime(rand(9, 18), rand(0, 59)),
+                    'date' => now()->subDays($daysAgo)->setTime(10 + $daysAgo, 15),
                     'total' => $total,
-                    'igv' => round($total - $total / 1.18, 2),
+                    'igv' => round($total - $total / (1 + Sale::IGV_RATE), 2),
                 ]);
 
-                foreach ($items as $r) {
-                    $sale->details()->create([
-                        'medicine_id' => $r['m']->id,
-                        'amount' => $r['q'],
-                        'unit_price' => $r['m']->price,
-                        'subtotal' => round($r['m']->price * $r['q'], 2),
+                foreach ($rows as [$medicine, $amount, $price, $subtotal]) {
+                    DetailSale::create([
+                        'sale_id' => $sale->id,
+                        'medicine_id' => $medicine->id,
+                        'amount' => $amount,
+                        'price_unit' => $price,
+                        'subtotal' => $subtotal,
                     ]);
-                    $r['m']->decrement('stock', $r['q']);
                 }
             }
         }
->>>>>>> Stashed changes
     }
 }
