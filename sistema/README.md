@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 <p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
 
 <p align="center">
@@ -56,3 +57,52 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+=======
+# FARM SJB – Sistema de Venta de Medicamentos (Laravel)
+
+Módulos funcionales: **Dashboard, Reportes, Medicamentos, Clientes, Ventas, Roles, Usuarios y Categorías**.
+
+## Puesta en marcha
+
+```bash
+cd sistema
+composer install            # solo si no existe la carpeta vendor
+copy .env.example .env      # solo si no tienes .env (en Linux/Mac: cp)
+php artisan key:generate    # solo si APP_KEY está vacío
+```
+
+1. Crea la base de datos vacía en MySQL (nombre por defecto `FarmaciaUPSJ`, usuario `root`, sin contraseña; se cambia en `.env`).
+2. Crea las tablas y los datos de ejemplo:
+
+```bash
+php artisan migrate:fresh --seed
+php artisan serve
+```
+
+Abre http://127.0.0.1:8000
+
+## Usuarios de prueba (contraseña: `password`)
+
+| Rol           | Correo                 |
+|---------------|------------------------|
+| Administrador | admin@sanjuan.com      |
+| Vendedor      | vendedor@sanjuan.com   |
+
+El **Vendedor** no ve ni accede a *Roles* ni *Usuarios*, y no puede anular ventas.
+
+## Reglas del sistema
+
+- Los precios de los medicamentos incluyen IGV (18 %); en cada venta se muestra el IGV desglosado.
+- Al registrar una venta se descuenta el stock; al **anular** una venta (solo Administrador) el stock se devuelve.
+- Stock bajo = 10 unidades o menos (campana de notificaciones, dashboard y reportes).
+- No se pueden eliminar: categorías con medicamentos, medicamentos vendidos, clientes con ventas, roles con usuarios, el rol Administrador ni tu propio usuario.
+
+## Pruebas automáticas
+
+```sql
+CREATE DATABASE FarmaciaUPSJ_test;
+```
+```bash
+php artisan test
+```
+>>>>>>> Stashed changes

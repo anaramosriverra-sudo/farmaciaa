@@ -65,7 +65,11 @@ return [
     |
     */
 
+<<<<<<< Updated upstream
     'timezone' => 'UTC',
+=======
+    'timezone' => env('APP_TIMEZONE', 'America/Lima'),
+>>>>>>> Stashed changes
 
     /*
     |--------------------------------------------------------------------------
@@ -78,11 +82,19 @@ return [
     |
     */
 
+<<<<<<< Updated upstream
     'locale' => env('APP_LOCALE', 'en'),
 
     'fallback_locale' => env('APP_FALLBACK_LOCALE', 'en'),
 
     'faker_locale' => env('APP_FAKER_LOCALE', 'en_US'),
+=======
+    'locale' => env('APP_LOCALE', 'es'),
+
+    'fallback_locale' => env('APP_FALLBACK_LOCALE', 'es'),
+
+    'faker_locale' => env('APP_FAKER_LOCALE', 'es_PE'),
+>>>>>>> Stashed changes
 
     /*
     |--------------------------------------------------------------------------

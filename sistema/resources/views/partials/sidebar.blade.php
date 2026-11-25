@@ -1,3 +1,7 @@
+<<<<<<< Updated upstream
+=======
+@php($activo = fn (string $patron) => request()->routeIs($patron) ? 'active_item' : '')
+>>>>>>> Stashed changes
 <aside id="sidebar" class="bg-dark text-white d-flex flex-column flex-shrink-0" aria-label="Navegación principal">
 
     <div class="d-flex align-items-center px-3 pt-4 pb-3">
@@ -18,12 +22,20 @@
       <p class="sidebar-section-title text-white-50 text-uppercase fw-semibold px-3 mb-2 mt-2">Principal</p>
       <ul class="nav flex-column gap-1 mb-1">
         <li class="nav-item">
+<<<<<<< Updated upstream
           <a href="{{ route('dashboard.index') }}" class="nav-link sidebar-link text-white-50 rounded-4 px-3 py-2 d-flex align-items-center gap-2 {{ request()->is(['/']) ?' active_item': null }}" aria-current="{{ request()->is(['/']) ? 'page': null }}">
+=======
+          <a href="{{ route('dashboard') }}" class="nav-link sidebar-link text-white-50 rounded-4 px-3 py-2 d-flex align-items-center gap-2 {{ $activo('dashboard') }}" aria-current="{{ request()->routeIs('dashboard') ? 'page' : 'false' }}">
+>>>>>>> Stashed changes
             <i class="bi bi-house-door fs-6"></i><span class="small fw-medium">Dashboard</span>
           </a>
         </li>
         <li class="nav-item">
+<<<<<<< Updated upstream
           <a href="" class="nav-link sidebar-link text-white-50 rounded-4 px-3 py-2 d-flex align-items-center gap-2" aria-current="">
+=======
+          <a href="{{ route('reports.index') }}" class="nav-link sidebar-link text-white-50 rounded-4 px-3 py-2 d-flex align-items-center gap-2 {{ $activo('reports.*') }}" aria-current="{{ request()->routeIs('reports.*') ? 'page' : 'false' }}">
+>>>>>>> Stashed changes
             <i class="bi bi-bar-chart fs-6"></i><span class="small fw-medium">Reportes</span>
           </a>
         </li>
@@ -32,17 +44,29 @@
       <p class="sidebar-section-title text-white-50 text-uppercase fw-semibold px-3 mb-2 mt-3">Gestión</p>
       <ul class="nav flex-column gap-1 mb-1">
             <li class="nav-item">
+<<<<<<< Updated upstream
             <a href="" class="nav-link sidebar-link text-white-50 rounded-4 px-3 py-2 d-flex align-items-center gap-2" aria-current="">
+=======
+            <a href="{{ route('medicamentos.index') }}" class="nav-link sidebar-link text-white-50 rounded-4 px-3 py-2 d-flex align-items-center gap-2 {{ $activo('medicamentos.*') }}" aria-current="{{ request()->routeIs('medicamentos.*') ? 'page' : 'false' }}">
+>>>>>>> Stashed changes
             <i class="bi bi-box-seam fs-6"></i><span class="small fw-medium">Medicamentos</span>
           </a>
         </li>
         <li class="nav-item">
+<<<<<<< Updated upstream
           <a href="" class="nav-link sidebar-link text-white-50 rounded-4 px-3 py-2 d-flex align-items-center gap-2" aria-current="">
+=======
+          <a href="{{ route('customers.index') }}" class="nav-link sidebar-link text-white-50 rounded-4 px-3 py-2 d-flex align-items-center gap-2 {{ $activo('customers.*') }}" aria-current="{{ request()->routeIs('customers.*') ? 'page' : 'false' }}">
+>>>>>>> Stashed changes
             <i class="bi bi-people fs-6"></i><span class="small fw-medium">Clientes</span>
           </a>
         </li>
         <li class="nav-item">
+<<<<<<< Updated upstream
           <a href="" class="nav-link sidebar-link text-white-50 rounded-4 px-3 py-2 d-flex align-items-center gap-2" aria-current="">
+=======
+          <a href="{{ route('sales.index') }}" class="nav-link sidebar-link text-white-50 rounded-4 px-3 py-2 d-flex align-items-center gap-2 {{ $activo('sales.*') }}" aria-current="{{ request()->routeIs('sales.*') ? 'page' : 'false' }}">
+>>>>>>> Stashed changes
             <i class="bi bi-cart3 fs-6"></i><span class="small fw-medium">Ventas</span>
           </a>
         </li>
@@ -50,6 +74,7 @@
 
       <p class="sidebar-section-title text-white-50 text-uppercase fw-semibold px-3 mb-2 mt-3">Configuraciones</p>
       <ul class="nav flex-column gap-1">
+<<<<<<< Updated upstream
         <li class="nav-item">
           <a href="" class="nav-link sidebar-link text-white-50 rounded-4 px-3 py-2 d-flex align-items-center gap-2" aria-current="">
             <i class="bi bi-shield fs-6"></i><span class="small fw-medium">Roles</span>
@@ -62,6 +87,24 @@
         </li>
         <li class="nav-item">
           <a href="{{ route('categories.index') }}" class="nav-link sidebar-link text-white-50 rounded-4 px-3 py-2 d-flex align-items-center gap-2  {{ request()->is(['categories*']) ?' active_item':null}}" aria-current="{{ request()->is(['categories*']) ? 'page':null}}">
+=======
+        @if (auth()->user()->isAdmin())
+        <li class="nav-item">
+          <a href="{{ route('roles.index') }}" class="nav-link sidebar-link text-white-50 rounded-4 px-3 py-2 d-flex align-items-center gap-2 {{ $activo('roles.*') }}" aria-current="{{ request()->routeIs('roles.*') ? 'page' : 'false' }}">
+            <i class="bi bi-shield fs-6"></i><span class="small fw-medium">Roles</span>
+          </a>
+        </li>
+        @endif
+        @if (auth()->user()->isAdmin())
+        <li class="nav-item">
+          <a href="{{ route('users.index') }}" class="nav-link sidebar-link text-white-50 rounded-4 px-3 py-2 d-flex align-items-center gap-2 {{ $activo('users.*') }}" aria-current="{{ request()->routeIs('users.*') ? 'page' : 'false' }}">
+            <i class="bi bi-person-gear fs-6"></i><span class="small fw-medium">Usuarios</span>
+          </a>
+        </li>
+        @endif
+        <li class="nav-item">
+          <a href="{{ route('categories.index') }}" class="nav-link sidebar-link text-white-50 rounded-4 px-3 py-2 d-flex align-items-center gap-2 {{ $activo('categories.*') }}" aria-current="{{ request()->routeIs('categories.*') ? 'page' : 'false' }}">
+>>>>>>> Stashed changes
             <i class="bi bi-grid fs-6"></i><span class="small fw-medium">Categorías</span>
           </a>
         </li>
@@ -78,11 +121,19 @@
               aria-haspopup="true"
               aria-label="Opciones de cuenta">
         <div class="user-avatar rounded-circle bg-primary d-flex align-items-center justify-content-center flex-shrink-0">
+<<<<<<< Updated upstream
           <span class="text-white fw-bold lh-1">SJ</span>
         </div>
         <div class="lh-sm overflow-hidden flex-grow-1 text-start">
           <div class="text-white fw-semibold small">Administrador</div>
           <div class="text-white-50" style="font-size:.7rem">admin@sanjuan.com</div>
+=======
+          <span class="text-white fw-bold lh-1">{{ auth()->user()->getIniciales() }}</span>
+        </div>
+        <div class="lh-sm overflow-hidden flex-grow-1 text-start">
+          <div class="text-white fw-semibold small text-truncate">{{ auth()->user()->name }}</div>
+          <div class="text-white-50 text-truncate" style="font-size:.7rem">{{ auth()->user()->email }}</div>
+>>>>>>> Stashed changes
         </div>
         <i class="bi bi-chevron-up text-white-50 small user-menu-chevron"></i>
       </button>
@@ -90,12 +141,21 @@
         <li class="px-3 py-2 border-bottom" style="background:var(--bs-tertiary-bg)">
           <div class="d-flex align-items-center gap-2">
             <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center flex-shrink-0" style="width:40px;height:40px">
+<<<<<<< Updated upstream
               <span class="text-white fw-bold small">SJ</span>
             </div>
             <div class="lh-sm overflow-hidden">
               <div class="fw-semibold small">Administrador</div>
               <div class="text-secondary" style="font-size:.7rem">admin@sanjuan.com</div>
               <span class="badge bg-primary-subtle text-primary mt-1 px-2 rounded-pill" style="font-size:.6rem;font-weight:600">Super Admin</span>
+=======
+              <span class="text-white fw-bold small">{{ auth()->user()->getIniciales() }}</span>
+            </div>
+            <div class="lh-sm overflow-hidden">
+              <div class="fw-semibold small">{{ auth()->user()->name }}</div>
+              <div class="text-secondary" style="font-size:.7rem">{{ auth()->user()->email }}</div>
+              <span class="badge bg-primary-subtle text-primary mt-1 px-2 rounded-pill" style="font-size:.6rem;font-weight:600">{{ auth()->user()->role?->name }}</span>
+>>>>>>> Stashed changes
             </div>
           </div>
         </li>

@@ -12,6 +12,7 @@
         <p class="text-secondary small mb-0">¿Estás seguro de que deseas salir del sistema?</p>
       </div>
 
+<<<<<<< Updated upstream
       <div class="modal-footer border-top justify-content-center py-3 gap-2">
         <button type="button" class="btn btn-sm btn-outline-secondary px-4"
                 data-bs-dismiss="modal">Cancelar</button>
@@ -23,3 +24,19 @@
     </div>
   </div>
 </div>
+=======
+      <form method="POST" action="{{ route('logout') }}">
+        @csrf
+        <div class="modal-footer border-top justify-content-center py-3 gap-2">
+          <button type="button" class="btn btn-sm btn-outline-secondary px-4"
+                  data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-sm btn-danger px-4" id="confirmLogoutBtn">
+            <i class="bi bi-box-arrow-right me-1"></i>Salir
+          </button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+</div>
+>>>>>>> Stashed changes

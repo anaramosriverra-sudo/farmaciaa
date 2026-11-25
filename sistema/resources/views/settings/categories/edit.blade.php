@@ -1,5 +1,6 @@
 @extends('template.administrador')
 
+<<<<<<< Updated upstream
 @section('title', 'CATEGORIAS')
 @section('name-section', 'CATEGORIAS')
 
@@ -23,3 +24,20 @@
 
 
 @endsection
+=======
+@section('title', 'Categorías')
+@section('name-section', 'CATEGORÍAS')
+@section('descripcion', 'Editar categoría')
+@section('module-breadcrumb', 'Configuraciones')
+@section('section-breadcrumb', 'Categorías')
+@section('section-url', route('categories.index'))
+@section('item-breadcrumb', 'Editar')
+
+@section('content')
+<form action="{{ route('categories.update', $category) }}" method="POST">
+  @csrf
+  @method('PUT')
+  @include('settings.categories._form')
+</form>
+@endsection
+>>>>>>> Stashed changes

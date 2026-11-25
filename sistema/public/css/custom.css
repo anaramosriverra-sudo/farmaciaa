@@ -124,3 +124,18 @@ body { background-color: #f4f6f8; }
 .login-input-group:focus-within .input-group-text,
 .login-input-group:focus-within .form-control { border-color: var(--bs-primary); }
 .login-input-group .form-control.is-invalid ~ .input-group-text { border-color: var(--bs-danger); }
+<<<<<<< Updated upstream
+=======
+
+/* Formularios de eliminación dentro de menús desplegables */
+.dropdown-menu form { margin: 0; }
+
+/* Impresión (reportes y comprobantes) */
+@media print {
+  #sidebar, .app-header, .sidebar-overlay, .d-print-none { display: none !important; }
+  #app-wrapper { height: auto; overflow: visible; }
+  .main-wrapper, .app-content { overflow: visible !important; }
+  body { background: #fff; }
+  .card { box-shadow: none !important; }
+}
+>>>>>>> Stashed changes
