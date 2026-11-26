@@ -1,0 +1,16 @@
+{
+    "name": "FARM SJB - Farmacia San Juan",
+    "short_name": "FARM SJB",
+    "background_color": "#ffffff",
+    "display": "standalone",
+    "description": "Sistema de Venta de Medicamentos de la Farmacia San Juan.",
+    "theme_color": "#ff0a41",
+    "start_url": "/",
+    "icons": [
+        {
+            "src": "logo.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}
