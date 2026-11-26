@@ -8,6 +8,8 @@
   {{-- asset(): rutas desde public/, igual que en la plantilla --}}
   <link rel="stylesheet" href="{{ asset('css/bootstrap.css') }}">
   <link rel="stylesheet" href="{{ asset('css/custom.css') }}">
+  {{-- PWA: manifest, color del tema e ícono (paquete erag/laravel-pwa) --}}
+  @PwaHead
 </head>
 
 <body>
@@ -150,5 +152,7 @@
     submit.querySelector('.btn-label').textContent = 'Ingresando...';
   });
 </script>
+{{-- PWA: registra el service worker (public/sw.js) y el botón Instalar --}}
+@RegisterServiceWorkerScript
 </body>
 </html>

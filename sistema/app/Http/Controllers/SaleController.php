@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Customer;
 use App\Models\Medicine;
 use App\Models\Sale;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -100,6 +101,18 @@ class SaleController extends Controller
         $sale->load(['customer', 'user', 'details.medicine']);
 
         return view('management.sales.show', compact('sale'));
+    }
+
+    // Comprobante de la venta en PDF (librería DomPDF)
+    public function pdf(Sale $sale)
+    {
+        $sale->load(['customer', 'user', 'details.medicine']);
+
+        $pdf = Pdf::loadView('management.sales.pdf', compact('sale'))->setPaper('a5', 'portrait')
+            ->setOption('enable_font_subsetting', true); // solo incluye las letras usadas: PDF más liviano
+
+        // stream(): el PDF se abre en el navegador (desde ahí se puede imprimir o guardar)
+        return $pdf->stream('venta-' . str_pad($sale->id, 6, '0', STR_PAD_LEFT) . '.pdf');
     }
 
     // Anular venta: devuelve el stock y la elimina

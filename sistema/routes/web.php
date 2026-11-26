@@ -24,6 +24,7 @@ Route::middleware('auth')->group(function () {
     // Todos los roles
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard.index');
     Route::resource('customers', CustomerController::class)->except('show');
+    Route::get('/sales/{sale}/pdf', [SaleController::class, 'pdf'])->name('sales.pdf'); // comprobante en PDF
     Route::resource('sales', SaleController::class)->except(['edit', 'update'])
         ->middlewareFor('destroy', 'role:Administrador'); // solo el administrador anula ventas
 
@@ -31,6 +32,8 @@ Route::middleware('auth')->group(function () {
     Route::middleware('role:Administrador,Químico farmacéutico')->group(function () {
         Route::resource('medicines', MedicineController::class)->except('show');
         Route::get('/reports/sales', [ReportController::class, 'sales'])->name('reports.sales');
+        Route::get('/reports/sales/pdf', [ReportController::class, 'salesPdf'])->name('reports.sales.pdf');     // DomPDF
+        Route::get('/reports/sales/excel', [ReportController::class, 'salesExcel'])->name('reports.sales.excel'); // maatwebsite/excel
     });
 
     // Solo el administrador: Configuraciones

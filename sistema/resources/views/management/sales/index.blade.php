@@ -53,6 +53,7 @@
                             </button>
                             <ul class="dropdown-menu dropdown-menu-end">
                                 <li><a class="dropdown-item" href="{{ route('sales.show', $sale) }}">Ver detalle</a></li>
+                                <li><a class="dropdown-item" href="{{ route('sales.pdf', $sale) }}" target="_blank">Comprobante PDF</a></li>
                                 {{-- Solo el administrador ve la opción Anular --}}
                                 @if (auth()->user()->hasRole('Administrador'))
                                 <li>

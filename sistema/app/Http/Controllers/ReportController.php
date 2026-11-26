@@ -2,15 +2,62 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\SalesExport;
 use App\Models\Category;
 use App\Models\Customer;
 use App\Models\Sale;
 use App\Models\User;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ReportController extends Controller
 {
+    // GET /reports/sales: reporte en pantalla
     public function sales(Request $request)
+    {
+        // 1-3. Ventas filtradas, rango de fechas y totales (ver filteredSales())
+        ['sales' => $sales, 'from' => $from, 'to' => $to, 'summary' => $summary] = $this->filteredSales($request);
+
+        // 4. Datos para el gráfico: total por día dentro del rango
+        $chart = $sales->groupBy(fn ($sale) => $sale->date->format('d/m'))
+            ->map(fn ($group) => round($group->sum('total'), 2));
+
+        // 5. Listas para los <select> de los filtros
+        $customers = Customer::orderBy('name')->get();
+        $users = User::orderBy('name')->get();
+        $categories = Category::orderBy('name')->get();
+
+        return view('principal.reports.sales', compact(
+            'sales', 'summary', 'chart', 'from', 'to', 'customers', 'users', 'categories'
+        ));
+    }
+
+    // GET /reports/sales/pdf: el mismo reporte en PDF (librería DomPDF)
+    public function salesPdf(Request $request)
+    {
+        $data = $this->filteredSales($request);
+        $data['filters'] = $this->filterLabels($request);
+
+        // loadView() convierte una vista Blade en PDF; setPaper() elige el tamaño y la orientación
+        $pdf = Pdf::loadView('principal.reports.sales-pdf', $data)->setPaper('a4', 'portrait')
+            ->setOption('enable_font_subsetting', true); // solo incluye las letras usadas: PDF más liviano
+
+        // download(): el navegador descarga el archivo
+        return $pdf->download("reporte-ventas-{$data['from']}-al-{$data['to']}.pdf");
+    }
+
+    // GET /reports/sales/excel: el mismo reporte en Excel (librería maatwebsite/excel)
+    public function salesExcel(Request $request)
+    {
+        ['sales' => $sales, 'from' => $from, 'to' => $to] = $this->filteredSales($request);
+
+        // SalesExport (app/Exports) define las columnas y el formato de la hoja
+        return Excel::download(new SalesExport($sales), "reporte-ventas-{$from}-al-{$to}.xlsx");
+    }
+
+    // Consulta compartida por la pantalla, el PDF y el Excel: así los tres muestran lo mismo
+    private function filteredSales(Request $request): array
     {
         // 1. Valida los filtros. Todos son opcionales; si no llegan fechas, se usa el mes actual
         $request->validate([
@@ -43,17 +90,16 @@ class ReportController extends Controller
             'average' => $sales->avg('total') ?? 0,
         ];
 
-        // 4. Datos para el gráfico: total por día dentro del rango
-        $chart = $sales->groupBy(fn ($sale) => $sale->date->format('d/m'))
-            ->map(fn ($group) => round($group->sum('total'), 2));
+        return compact('sales', 'from', 'to', 'summary');
+    }
 
-        // 5. Listas para los <select> de los filtros
-        $customers = Customer::orderBy('name')->get();
-        $users = User::orderBy('name')->get();
-        $categories = Category::orderBy('name')->get();
-
-        return view('principal.reports.sales', compact(
-            'sales', 'summary', 'chart', 'from', 'to', 'customers', 'users', 'categories'
-        ));
+    // Nombres de los filtros elegidos, para mostrarlos en el encabezado del PDF
+    private function filterLabels(Request $request): array
+    {
+        return [
+            'Cliente' => $request->customer_id ? Customer::find($request->customer_id)?->name : 'Todos',
+            'Vendedor' => $request->user_id ? User::find($request->user_id)?->name : 'Todos',
+            'Categoría' => $request->category_id ? Category::find($request->category_id)?->name : 'Todas',
+        ];
     }
 }

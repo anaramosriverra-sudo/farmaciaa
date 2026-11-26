@@ -56,6 +56,16 @@
         </form>
     </div>
 
+    {{-- Exportar: los botones envían los mismos filtros de la URL (request()->query()) --}}
+    <div class="d-flex justify-content-end gap-2 mb-3">
+        <a href="{{ route('reports.sales.pdf', request()->query()) }}" class="btn btn-outline-danger btn-sm">
+            <i class="bi bi-file-earmark-pdf"></i> Exportar PDF
+        </a>
+        <a href="{{ route('reports.sales.excel', request()->query()) }}" class="btn btn-outline-success btn-sm">
+            <i class="bi bi-file-earmark-excel"></i> Exportar Excel
+        </a>
+    </div>
+
     {{-- ── 2. Resumen --}}
     <div class="row g-3 mb-3">
         <div class="col-6 col-lg-3"><div class="card bg-white border-0 shadow-sm p-3"><small class="text-secondary">N.° de ventas</small><div class="fs-5 fw-bold">{{ $summary['count'] }}</div></div></div>

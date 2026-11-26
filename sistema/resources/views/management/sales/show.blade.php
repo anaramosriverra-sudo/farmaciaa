@@ -78,6 +78,10 @@
         </table>
 
         <a href="{{ route('sales.index') }}" class="btn btn-secondary">Volver</a>
+        {{-- Comprobante en PDF (DomPDF); se abre en otra pestaña --}}
+        <a href="{{ route('sales.pdf', $sale) }}" target="_blank" class="btn btn-primary text-white">
+            <i class="bi bi-file-earmark-pdf"></i> Comprobante PDF
+        </a>
     </div>
 </div>
 @endsection

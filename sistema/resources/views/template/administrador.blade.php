@@ -7,6 +7,8 @@
   <title>FARM SJB | @yield('title')</title>
   <link rel="stylesheet" href="{{ asset('css/bootstrap.css') }}">
   <link rel="stylesheet" href="{{ asset('css/custom.css') }}">
+  {{-- PWA: manifest, color del tema e ícono (paquete erag/laravel-pwa) --}}
+  @PwaHead
 </head>
 
 <body>
@@ -72,5 +74,7 @@
 @stack('scripts')
 
 
+{{-- PWA: registra el service worker (public/sw.js) y el botón Instalar --}}
+@RegisterServiceWorkerScript
 </body>
 </html>

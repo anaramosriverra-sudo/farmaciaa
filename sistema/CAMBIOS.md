@@ -44,3 +44,15 @@ php artisan serve
 - Campana del encabezado con alertas reales de stock bajo.
 - `APP_LOCALE=es`, bloque MySQL en `.env.example`, reglas `date`/`after_or_equal` en `lang/es/validation.php`.
 - Pruebas automáticas en `tests/Feature/LoginRolesTest.php` (casos del Paso 18): `php artisan test`.
+
+## Reportes PDF, Excel y PWA (requisitos de la entrega final)
+| Requisito | Paquete | Dónde se usa |
+|---|---|---|
+| Reportes con DomPDF | `barryvdh/laravel-dompdf` | Botón **Exportar PDF** en Reportes (`/reports/sales/pdf`, respeta los filtros) y **Comprobante PDF** en cada venta (`/sales/{id}/pdf`). Vistas: `principal/reports/sales-pdf.blade.php` y `management/sales/pdf.blade.php`. |
+| Reportes con Excel | `maatwebsite/excel` | Botón **Exportar Excel** en Reportes (`/reports/sales/excel`, respeta los filtros). Clase `app/Exports/SalesExport.php`. |
+| Laravel PWA | `erag/laravel-pwa` | `config/pwa.php`, `public/manifest.json`, `public/sw.js`, `public/offline.html` y `public/logo.png`. Directivas `@PwaHead` y `@RegisterServiceWorkerScript` en la plantilla y el login. |
+
+- La pantalla, el PDF y el Excel del reporte usan la misma consulta (`ReportController::filteredSales()`), así que siempre muestran lo mismo.
+- Exportar PDF/Excel es solo para Administrador y Químico farmacéutico (igual que Reportes); el comprobante de venta lo puede imprimir cualquier rol.
+- **PWA**: con `php artisan serve` (http://127.0.0.1:8000) el navegador muestra el botón **Instalar** en la barra de direcciones o el ícono rojo abajo a la derecha. Fuera de localhost, la PWA necesita HTTPS. Si cambias `config/pwa.php`, ejecuta `php artisan erag:update-manifest`.
+- Pruebas en `tests/Feature/ExportsPwaTest.php`.
