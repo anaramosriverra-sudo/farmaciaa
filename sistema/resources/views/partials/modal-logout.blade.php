@@ -15,9 +15,10 @@
       <div class="modal-footer border-top justify-content-center py-3 gap-2">
         <button type="button" class="btn btn-sm btn-outline-secondary px-4"
                 data-bs-dismiss="modal">Cancelar</button>
-        <form action="{{ route('logout') }}" method="POST" class="d-inline">
+        {{-- Cerrar sesión cambia datos en el servidor: va por POST y con @csrf --}}
+        <form action="{{ route('logout') }}" method="POST">
           @csrf
-          <button type="submit" class="btn btn-sm btn-danger px-4" id="confirmLogoutBtn">
+          <button type="submit" class="btn btn-sm btn-danger px-4">
             <i class="bi bi-box-arrow-right me-1"></i>Salir
           </button>
         </form>

@@ -1,175 +1,144 @@
+{{-- Hereda la plantilla padre: menú, encabezado y estilos --}}
 @extends('template.administrador')
 
-@section('title', 'VENTAS')
-@section('name-section', 'VENTAS')
-@section('descripcion', 'Registrar una nueva venta')
-@section('module-breadcrumb', 'Gestión')
-@section('section-breadcrumb', 'Ventas')
-@section('item-breadcrumb', 'Nueva')
+{{-- Rellena los huecos (@yield) de la plantilla --}}
+@section('title', 'Ventas')
+@section('name_section', 'Ventas')
+@section('description', 'Registrar nueva venta')
+@section('item_section', 'Nueva')
+@section('route_section', route('sales.index'))
+@section('section', 'Ventas')
+@section('module', 'Gestión')
 
+{{-- Ventas: no hay edit; se registra, se consulta y, si hace falta, se anula --}}
 @section('content')
-@php
-  $medicineData = $medicines->map(fn ($m) => [
-      'id' => $m->id,
-      'name' => $m->name,
-      'price' => (float) $m->price,
-      'stock' => (int) $m->stock,
-  ])->values();
-@endphp
-
 <div class="card bg-white border-0 shadow-sm border-5 border-top border-secondary">
-  <div class="card-body">
-    <form action="{{ route('sales.store') }}" method="POST" id="saleForm">
-      @csrf
-      @include('partials.form-actions')
+    <div class="card-body">
+        <form action="{{ route('sales.store') }}" method="POST">
+            @csrf {{-- token de seguridad; sin él aparece el error 419 --}}
 
-      <div class="row mb-3">
-        <div class="col-md-6">
-          <label for="customer_id" class="form-label">Cliente</label>
-          <select name="customer_id" id="customer_id" class="form-select @error('customer_id') is-invalid @enderror" required>
-            <option value="">— Seleccione —</option>
-            @foreach($customers as $customer)
-              <option value="{{ $customer->id }}" @selected((string) old('customer_id') === (string) $customer->id)>
-                {{ $customer->name }} — DNI {{ $customer->dni }}
-              </option>
-            @endforeach
-          </select>
-          @error('customer_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
-          <div class="form-text">
-            ¿Cliente nuevo? <a href="{{ route('customers.create') }}">Regístralo aquí</a>.
-          </div>
-        </div>
-      </div>
+            {{-- Datos generales --}}
+            <div class="row">
+                <div class="col-12 col-md-6 mb-3">
+                    <label for="customer_id" class="form-label">Cliente</label>
+                    <select name="customer_id" id="customer_id" class="form-select @error('customer_id') is-invalid @enderror">
+                        <option value="">-- Seleccione --</option>
+                        @foreach ($customers as $customer)
+                            <option value="{{ $customer->id }}" @selected(old('customer_id') == $customer->id)>
+                                {{ $customer->name }} - DNI {{ $customer->dni }}
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('customer_id')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
 
-      <div class="table-responsive">
-        <table class="table table-sm align-middle" id="itemsTable">
-          <thead>
-            <tr>
-              <th class="text-uppercase small" style="min-width:260px">Medicamento</th>
-              <th class="text-end text-uppercase small">Precio</th>
-              <th class="text-uppercase small" style="width:120px">Cantidad</th>
-              <th class="text-end text-uppercase small">Subtotal</th>
-              <th style="width:50px"></th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
+                <div class="col-12 col-md-6 mb-3">
+                    <label class="form-label">Vendedor</label>
+                    {{-- Ya no se elige: es el usuario que inició sesión --}}
+                    <input type="text" class="form-control" value="{{ auth()->user()->name }}" disabled>
+                </div>
+            </div>
 
-      <button type="button" class="btn btn-outline-primary btn-sm mb-4" id="addRow">
-        <i class="bi bi-plus-lg me-1"></i>Agregar medicamento
-      </button>
+            {{-- Detalle de productos --}}
+            <h6 class="text-uppercase small text-muted mt-2 mb-2">Medicamentos</h6>
 
-      <div class="row justify-content-end">
-        <div class="col-md-4">
-          <div class="d-flex justify-content-between"><span class="text-secondary">Subtotal (sin IGV)</span><span id="tSubtotal">S/ 0.00</span></div>
-          <div class="d-flex justify-content-between"><span class="text-secondary">IGV ({{ round(\App\Models\Sale::IGV_RATE * 100) }}%)</span><span id="tIgv">S/ 0.00</span></div>
-          <div class="d-flex justify-content-between fw-bold fs-5 border-top pt-2 mt-2"><span>TOTAL</span><span id="tTotal">S/ 0.00</span></div>
-        </div>
-      </div>
+            {{-- Errores del detalle: falta de productos, repetidos o stock insuficiente --}}
+            @if ($errors->has('items') || $errors->has('items.*'))
+                <div class="alert alert-danger py-2">
+                    @foreach ($errors->get('items*') as $messages)
+                        @foreach ((array) $messages as $message)
+                            <div>{{ $message }}</div>
+                        @endforeach
+                    @endforeach
+                </div>
+            @endif
 
-      <div class="mt-4">
-        <button type="submit" class="btn btn-primary text-white">Registrar venta</button>
-        <a href="{{ route('sales.index') }}" class="btn btn-secondary">Cancelar</a>
-      </div>
-    </form>
-  </div>
+            <table class="table table-sm align-middle">
+                <thead>
+                    <tr>
+                        <th class="small text-uppercase">Medicamento</th>
+                        <th class="small text-uppercase text-center" style="width: 120px">Cantidad</th>
+                        <th class="small text-uppercase text-end" style="width: 120px">Precio</th>
+                        <th class="small text-uppercase text-end" style="width: 120px">Subtotal</th>
+                        <th style="width: 50px"></th>
+                    </tr>
+                </thead>
+                <tbody id="items">
+                    {{-- Si la validación falla, se vuelven a mostrar las filas enviadas --}}
+                    @foreach (old('items', []) as $i => $item)
+                        @include('management.sales.item-row', ['index' => $i, 'item' => $item])
+                    @endforeach
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="3" class="text-end fw-semibold">Total (incluye IGV)</td>
+                        <td class="text-end fw-bold" id="total">S/ 0.00</td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+
+            <button type="button" id="add-item" class="btn btn-outline-primary btn-sm mb-4">
+                <i class="bi bi-plus-lg me-1"></i>Agregar medicamento
+            </button>
+
+            <div>
+                <button type="submit" class="btn btn-primary text-white">Registrar venta</button>
+                <a href="{{ route('sales.index') }}" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
 </div>
+
+{{-- Plantilla de una fila vacía (la copia el JavaScript) --}}
+<template id="item-template">
+    @include('management.sales.item-row', ['index' => '__INDEX__', 'item' => []])
+</template>
 @endsection
 
 @push('scripts')
 <script>
-(function () {
-  const medicines = @json($medicineData);
-  const previous = @json(old('items', []));
-  const IGV_RATE = {{ \App\Models\Sale::IGV_RATE }};
-  const tbody = document.querySelector('#itemsTable tbody');
-  let counter = 0;
+    const tbody = document.getElementById('items');
+    const template = document.getElementById('item-template').innerHTML;
+    // Siguiente índice libre: uno más que el mayor índice enviado (si se quitó una fila, no se repite)
+    let index = {{ old('items') ? max(array_keys(old('items'))) + 1 : 0 }};
 
-  const money = (n) => 'S/ ' + n.toFixed(2);
-  const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const findMedicine = (id) => medicines.find((m) => String(m.id) === String(id));
+    // Recalcula subtotales y total
+    function recalculate() {
+        let total = 0;
+        tbody.querySelectorAll('tr').forEach(row => {
+            const option = row.querySelector('select').selectedOptions[0];
+            const price = parseFloat(option?.dataset.price || 0);
+            const amount = parseInt(row.querySelector('input').value || 0);
+            const subtotal = price * amount;
 
-  function recalc() {
-    let total = 0;
-    tbody.querySelectorAll('tr').forEach((tr) => {
-      const med = findMedicine(tr.querySelector('.item-medicine').value);
-      const qty = parseInt(tr.querySelector('.item-amount').value, 10) || 0;
-      const price = med ? med.price : 0;
-      const sub = Math.round(price * qty * 100) / 100;
-      tr.querySelector('.item-price').textContent = money(price);
-      tr.querySelector('.item-subtotal').textContent = money(sub);
-      total += sub;
-    });
-    const igv = total - total / (1 + IGV_RATE);
-    document.getElementById('tTotal').textContent = money(total);
-    document.getElementById('tIgv').textContent = money(igv);
-    document.getElementById('tSubtotal').textContent = money(total - igv);
-  }
-
-  function addRow(medicineId, amount) {
-    const i = counter++;
-    const tr = document.createElement('tr');
-    const options = medicines
-      .map((m) => '<option value="' + m.id + '">' + escapeHtml(m.name) + ' (stock ' + m.stock + ')</option>')
-      .join('');
-
-    tr.innerHTML =
-      '<td><select name="items[' + i + '][medicine_id]" class="form-select form-select-sm item-medicine" required>' +
-        '<option value="">— Seleccione —</option>' + options + '</select></td>' +
-      '<td class="text-end item-price">S/ 0.00</td>' +
-      '<td><input type="number" name="items[' + i + '][amount]" class="form-control form-control-sm item-amount" min="1" step="1" value="' + (amount || 1) + '" required></td>' +
-      '<td class="text-end item-subtotal">S/ 0.00</td>' +
-      '<td class="text-center"><button type="button" class="btn btn-sm btn-outline-danger item-remove" title="Quitar"><i class="bi bi-x-lg"></i></button></td>';
-
-    tbody.appendChild(tr);
-
-    const select = tr.querySelector('.item-medicine');
-    const qty = tr.querySelector('.item-amount');
-    if (medicineId) select.value = medicineId;
-
-    const syncMax = () => {
-      const med = findMedicine(select.value);
-      if (med) {
-        qty.max = med.stock;
-        if (parseInt(qty.value, 10) > med.stock) qty.value = med.stock;
-      } else {
-        qty.removeAttribute('max');
-      }
-    };
-
-    select.addEventListener('change', () => {
-      const duplicated = Array.from(tbody.querySelectorAll('.item-medicine'))
-        .some((other) => other !== select && select.value !== '' && other.value === select.value);
-      if (duplicated) {
-        alert('Ese medicamento ya está en la lista. Modifica su cantidad.');
-        select.value = '';
-      }
-      syncMax();
-      recalc();
-    });
-    qty.addEventListener('input', () => { syncMax(); recalc(); });
-    tr.querySelector('.item-remove').addEventListener('click', () => { tr.remove(); recalc(); });
-
-    syncMax();
-    recalc();
-  }
-
-  document.getElementById('addRow').addEventListener('click', () => addRow('', 1));
-
-  document.getElementById('saleForm').addEventListener('submit', (e) => {
-    if (tbody.querySelectorAll('tr').length === 0) {
-      e.preventDefault();
-      alert('Agrega al menos un medicamento a la venta.');
+            row.querySelector('.price').textContent = 'S/ ' + price.toFixed(2);
+            row.querySelector('.subtotal').textContent = 'S/ ' + subtotal.toFixed(2);
+            total += subtotal;
+        });
+        document.getElementById('total').textContent = 'S/ ' + total.toFixed(2);
     }
-  });
 
-  const rows = Object.values(previous || {});
-  if (rows.length) {
-    rows.forEach((row) => addRow(row.medicine_id, row.amount));
-  } else {
-    addRow('', 1);
-  }
-})();
+    // Agregar una fila nueva
+    document.getElementById('add-item').addEventListener('click', () => {
+        tbody.insertAdjacentHTML('beforeend', template.replaceAll('__INDEX__', index++));
+    });
+
+    // Quitar una fila
+    tbody.addEventListener('click', e => {
+        if (e.target.closest('.remove-item')) {
+            e.target.closest('tr').remove();
+            recalculate();
+        }
+    });
+
+    // Recalcular al cambiar medicamento o cantidad
+    tbody.addEventListener('input', recalculate);
+
+    // Empieza con una fila si no hay ninguna
+    if (index === 0) document.getElementById('add-item').click();
+    recalculate();
 </script>
 @endpush

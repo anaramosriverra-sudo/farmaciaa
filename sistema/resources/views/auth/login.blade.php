@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="San Juan – Sistema de Venta de Medicamentos">
   <title>FARM SJB | Iniciar sesión</title>
+  {{-- asset(): rutas desde public/, igual que en la plantilla --}}
   <link rel="stylesheet" href="{{ asset('css/bootstrap.css') }}">
   <link rel="stylesheet" href="{{ asset('css/custom.css') }}">
 </head>
@@ -60,43 +61,57 @@
         <p class="text-secondary small mb-0">Ingresa tus credenciales para continuar.</p>
       </div>
 
-      @if($errors->any())
-        <div id="loginAlert" class="alert alert-danger small py-2" role="alert">
-          <i class="bi bi-exclamation-circle me-1"></i> {{ $errors->first() }}
+      {{-- Mensaje verde al cerrar sesión --}}
+      @if (session('ok'))
+        <div class="alert alert-success small py-2" role="alert">
+          <i class="bi bi-check-circle me-1"></i> {{ session('ok') }}
         </div>
       @endif
 
-      <form id="loginForm" class="needs-validation" method="POST" action="{{ route('login.attempt') }}" novalidate>
-        @csrf
+      {{-- En el prototipo esta alerta estaba oculta (d-none); ahora aparece si el servidor rechaza el login --}}
+      @error('email')
+        <div id="loginAlert" class="alert alert-danger small py-2" role="alert">
+          <i class="bi bi-exclamation-circle me-1"></i> {{ $message }}
+        </div>
+      @enderror
+
+      {{-- Sin id="loginForm": ese id lo captura app.js del prototipo y simula el login.
+           El formulario va por POST a la ruta 'login'. --}}
+      <form action="{{ route('login') }}" method="POST" novalidate>
+        @csrf {{-- token de seguridad; sin él aparece el error 419 --}}
 
         <div class="mb-3">
-          <label for="loginUser" class="form-label small fw-semibold text-dark">Correo electrónico</label>
-          <div class="input-group has-validation login-input-group">
+          <label for="loginUser" class="form-label small fw-semibold text-dark">Correo</label>
+          <div class="input-group login-input-group">
             <span class="input-group-text bg-white"><i class="bi bi-person text-secondary"></i></span>
-            <input type="email" id="loginUser" name="email" value="{{ old('email') }}" class="form-control border-start-0"
-                   placeholder="usuario@sanjuan.com" autocomplete="username" autofocus required>
-            <div class="invalid-feedback">Ingresa un correo válido.</div>
+            {{-- name="email": es el campo que comprueba Auth::attempt(). old() conserva lo escrito --}}
+            <input type="email" id="loginUser" name="email" value="{{ old('email') }}"
+                   class="form-control border-start-0 @error('email') is-invalid @enderror"
+                   placeholder="usuario@sanjuan.com" autocomplete="username" autofocus>
           </div>
         </div>
 
         <div class="mb-3">
           <div class="d-flex justify-content-between align-items-center">
             <label for="loginPassword" class="form-label small fw-semibold text-dark">Contraseña</label>
-            
+            <a href="#" class="small text-primary text-decoration-none mb-2">¿Olvidaste tu contraseña?</a>
           </div>
-          <div class="input-group has-validation login-input-group">
+          <div class="input-group login-input-group">
             <span class="input-group-text bg-white"><i class="bi bi-lock text-secondary"></i></span>
-            <input type="password" id="loginPassword" name="password" class="form-control border-start-0 border-end-0"
-                   placeholder="••••••••" autocomplete="current-password" minlength="6" required>
+            {{-- La contraseña nunca se vuelve a rellenar --}}
+            <input type="password" id="loginPassword" name="password"
+                   class="form-control border-start-0 border-end-0 @error('password') is-invalid @enderror"
+                   placeholder="••••••••" autocomplete="current-password">
             <button type="button" id="togglePassword" class="input-group-text bg-white" aria-label="Mostrar contraseña">
               <i class="bi bi-eye text-secondary"></i>
             </button>
-            <div class="invalid-feedback">La contraseña debe tener al menos 6 caracteres.</div>
           </div>
+          @error('password') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
         </div>
 
         <div class="form-check mb-4">
-          <input class="form-check-input" type="checkbox" id="rememberMe" name="remember" value="1">
+          {{-- name="remember": lo lee $request->boolean('remember') --}}
+          <input class="form-check-input" type="checkbox" id="rememberMe" name="remember">
           <label class="form-check-label small text-secondary" for="rememberMe">Mantener sesión iniciada</label>
         </div>
 
@@ -106,13 +121,34 @@
         </button>
       </form>
 
-      <p class="text-center text-secondary small mt-5 mb-0">&copy; 2026 FARM SJB · Todos los derechos reservados</p>
+      <p class="text-center text-secondary small mt-5 mb-0">&copy; {{ date('Y') }} FARM SJB · Todos los derechos reservados</p>
     </div>
   </section>
 
 </main>
 
 <script src="{{ asset('js/bootstrap.bundle.min.js') }}"></script>
-<script src="{{ asset('js/app.js') }}"></script>
+{{-- No se carga app.js: su función initLoginForm() es la simulación del prototipo.
+     Aquí solo queda lo útil del prototipo: ver la contraseña y el «Ingresando...» del botón. --}}
+<script>
+  const password = document.getElementById('loginPassword');
+  const toggle = document.getElementById('togglePassword');
+
+  // Mostrar u ocultar la contraseña
+  toggle.addEventListener('click', () => {
+    const visible = password.type === 'text';
+    password.type = visible ? 'password' : 'text';
+    toggle.setAttribute('aria-label', visible ? 'Mostrar contraseña' : 'Ocultar contraseña');
+    toggle.querySelector('i').className = `bi ${visible ? 'bi-eye' : 'bi-eye-slash'} text-secondary`;
+  });
+
+  // Al enviar: desactiva el botón y muestra el spinner. Esta vez SÍ se envía al servidor (sin preventDefault)
+  toggle.form.addEventListener('submit', () => {
+    const submit = document.getElementById('loginSubmit');
+    submit.disabled = true;
+    submit.querySelector('.spinner-border').classList.remove('d-none');
+    submit.querySelector('.btn-label').textContent = 'Ingresando...';
+  });
+</script>
 </body>
 </html>
